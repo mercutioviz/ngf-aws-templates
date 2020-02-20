@@ -1,1240 +1,1240 @@
 {
-    "AWSTemplateFormatVersion": "2010-09-09",
-    "Description": "Barracuda CloudGen Firewall - HA Cluster with eip shifting",
-    "Metadata": {
-        "AWS::CloudFormation::Interface": {
-            "ParameterGroups": [
-                {
-                    "Label": {
-                        "default": "Instance Settings"
-                    },
-                    "Parameters": [
-                        "InstanceType",
-                        "LicenceMode",
-                        "ReleaseVersion"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Network Settings"
-                    },
-                    "Parameters": [
-                        "VpcAddress",
-                        "CGF1MIP",
-                        "CGF2MIP",
-                        "Zone1",
-                        "Zone2"
-                    ]
-                }
-            ],
-            "ParameterLabels": {
-                "InstanceType": {
-                    "default": "Instance Type"
-                },
-                "IAMProfile": {
-                    "default": "IAM Profile Name"
-                },
-                "CGF1MIP": {
-                    "default": "Primary Firewall IP"
-                },
-                "CGF2MIP": {
-                    "default": "Secondary Firewall IP"
-                },
-                "Zone1": {
-                    "default": "AZ for Primary CGF"
-                },
-                "Zone2": {
-                    "default": "AZ for Secondary CGF"
-                }
-            }
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Barracuda CloudGen Firewall - HA Cluster with eip shifting",
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Instance Settings"
+          },
+          "Parameters": [
+            "InstanceType",
+            "LicenceMode",
+            "ReleaseVersion"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Network Settings"
+          },
+          "Parameters": [
+            "VpcAddress",
+            "CGF1MIP",
+            "CGF2MIP",
+            "Zone1",
+            "Zone2"
+          ]
         }
-    },
-    "Parameters": {
-        "Prefix": {
-            "Type": "String",
-            "Default": "CGFHA",
-            "Description": "Enter the prefix prepended to resources of this template"
-        },
+      ],
+      "ParameterLabels": {
         "InstanceType": {
-            "Description": "Select the EC2 instance type, Recommended: c5, m5 or t3",
-            "Type": "String",
-            "Default": "c5.large",
-            "AllowedValues": [
-                "t2.small",
-                "t3.small",
-                "t3.medium",
-                "t3.large",
-                "m5.large",
-                "m5.xlarge",
-                "m5.2xlarge",
-                "c5.large",
-                "c5.xlarge",
-                "c5.2xlarge"
-            ]
-        },
-        "LicenceMode": {
-            "Description": "Select the license type.",
-            "Type": "String",
-            "Default": "Hourly",
-            "AllowedValues": [
-                "Hourly",
-                "BYOL",
-                "Metered"
-            ]
-        },
-        "ReleaseVersion": {
-            "Description": "Which release do you want to deploy?",
-            "Type": "String",
-            "Default": "8.0.1",
-            "AllowedValues": [
-                "8.0.1",
-                "8.0.0"
-            ]
-        },
-        "EnableREST": {
-            "Description": "Enable REST service on firewall by default",
-            "Type": "String",
-            "Default": "No",
-            "AllowedValues": [
-                "Yes",
-                "No"
-            ]
+          "default": "Instance Type"
         },
         "IAMProfile": {
-            "Description": "Select the IAM Role for the Firewall. Check Barracuda Campus (https://campus.barracuda.com/doc/73719778/) for more details",
-            "Type": "String",
-            "Default": "NextGenFirewallRole"
+          "default": "IAM Profile Name"
         },
         "CGF1MIP": {
-            "Type": "String",
-            "Default": "192.168.1.10",
-            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
+          "default": "Primary Firewall IP"
         },
         "CGF2MIP": {
-            "Type": "String",
-            "Default": "192.168.2.10",
-            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
+          "default": "Secondary Firewall IP"
         },
         "Zone1": {
-            "Type": "AWS::EC2::AvailabilityZone::Name",
-            "Description": "Availability Zone for primary firewall"
+          "default": "AZ for Primary CGF"
         },
         "Zone2": {
-            "Type": "AWS::EC2::AvailabilityZone::Name",
-            "Description": "Availability Zone for secondary firewall"
-        },
-        "VpcAddress": {
-            "Description": "IP address space for new VPC",
-            "Type": "String",
-            "Default": "192.168.0.0/16",
-            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
-            "ConstraintDescription": "Use valid CIDR notation"
+          "default": "AZ for Secondary CGF"
         }
-    },
-    "Mappings": {
-        "amiMapMap": {
-            "8.0.0": {
-                "mapName": "amiMapv800"
-            },
-            "8.0.1": {
-                "mapName": "amiMapv801"
-            }
-        },
-        "amiMapv800": {
-            "eu-north-1" : {
-                "Hourly" : "ami-b634bac8",
-                "BYOL" : "ami-aca729d2",
-                "Metered" : "ami-5b32bc25"
-            },
-            "ap-south-1" : {
-                "Hourly" : "ami-05d8947000efde91c",
-                "BYOL" : "ami-0c549990baa53a1aa",
-                "Metered" : "ami-0ffccdda4badd479d"
-            },
-            "eu-west-3" : {
-                "Hourly" : "ami-08d4f09d195f65cff",
-                "BYOL" : "ami-0be502f7260dff134",
-                "Metered" : "ami-0d94bd0757df22ed5"
-            },
-            "eu-west-2" : {
-                "Hourly" : "ami-035b249f052aeb5fb",
-                "BYOL" : "ami-0de48be72df38213f",
-                "Metered" : "ami-079f0175e689e5097"
-            },
-            "eu-west-1" : {
-                "Hourly" : "ami-05adfe52ef7ec4044",
-                "BYOL" : "ami-0f5e293b518394d71",
-                "Metered" : "ami-0ada3e53562ebfc1c"
-            },
-            "ap-northeast-2" : {
-                "Hourly" : "ami-04ceb3fc6278de36d",
-                "BYOL" : "ami-0e27f9dd8e567acd3",
-                "Metered" : "ami-0c2d8a966c5e951f5"
-            },
-            "ap-northeast-1" : {
-                "Hourly" : "ami-0e988e6508948c3d3",
-                "BYOL" : "ami-043687e221594a9a1",
-                "Metered" : "ami-0584f33d006e5a056"
-            },
-            "sa-east-1" : {
-                "Hourly" : "ami-08968a20554149211",
-                "BYOL" : "ami-044ddf8df19021644",
-                "Metered" : "ami-0fcb14b5b118a13c7"
-            },
-            "ca-central-1" : {
-                "Hourly" : "ami-0e2e42f2cb5ece765",
-                "BYOL" : "ami-07afa625c7ee674d6",
-                "Metered" : "ami-0dd0c59294237d3e9"
-            },
-            "ap-southeast-1" : {
-                "Hourly" : "ami-0a3ecff76bcda23fc",
-                "BYOL" : "ami-0cb19a962b84d7c3b",
-                "Metered" : "ami-0ed78dcaddb4b49f3"
-            },
-            "ap-southeast-2" : {
-                "Hourly" : "ami-0f27e75ee3c9255fb",
-                "BYOL" : "ami-0d31110314e6d66ed",
-                "Metered" : "ami-06c5d534c177581c6"
-            },
-            "eu-central-1" : {
-                "Hourly" : "ami-049e4cc80b4d34754",
-                "BYOL" : "ami-0e5e37c8b6fa8a1ba",
-                "Metered" : "ami-0fbe71e180243be6a"
-            },
-            "us-east-1" : {
-                "Hourly" : "ami-091a6c8700573fd21",
-                "BYOL" : "ami-0c61a49ad4a308b8e",
-                "Metered" : "ami-0c4532c1dcbb3e897"
-            },
-            "us-east-2" : {
-                "Hourly" : "ami-0b97b7ca6d22e4379",
-                "BYOL" : "ami-0453af95aab2fe7e1",
-                "Metered" : "ami-05a9199138582ef3f"
-            },
-            "us-west-1" : {
-                "Hourly" : "ami-00d7c4c3401e0dccd",
-                "BYOL" : "ami-04d226c6d3e3f36d2",
-                "Metered" : "ami-0d176d42c7ed1e2d1"
-            },
-            "us-west-2" : {
-                "Hourly" : "ami-095db289b34f76bb8",
-                "BYOL" : "ami-0a213fa7b12a5b774",
-                "Metered" : "ami-0aaf43d17c67db548"
-            }
-        },
-        "amiMapv801": {
-            "eu-north-1" : {
-                "Hourly" : "ami-d5f07aab",
-                "BYOL" : "ami-3ddc5643",
-                "Metered" : "ami-c5de54bb"
-            },
-            "ap-south-1" : {
-                "Hourly" : "ami-0d80990e16203a3ef",
-                "BYOL" : "ami-063bdb93cfeaf488e",
-                "Metered" : "ami-09bfaa45d257c0483"
-            },
-            "eu-west-3" : {
-                "Hourly" : "ami-08587426b7e67d0f0",
-                "BYOL" : "ami-0d99cd1d6c8f1b69d",
-                "Metered" : "ami-0c83cb96ecc4941a7"
-            },
-            "eu-west-2" : {
-                "Hourly" : "ami-07b5a7fc0e47575b0",
-                "BYOL" : "ami-08c8443040da4c2da",
-                "Metered" : "ami-0d84fa76bca5a4070"
-            },
-            "eu-west-1" : {
-                "Hourly" : "ami-0b1daf478ac2778cc",
-                "BYOL" : "ami-0ef66d776e0c21d26",
-                "Metered" : "ami-0d83d89bf9e291142"
-            },
-            "ap-northeast-2" : {
-                "Hourly" : "ami-0f3c47e9693208c24",
-                "BYOL" : "ami-0ef98c31cbc5f57f0",
-                "Metered" : "ami-0818cfbd5cef2e5c8"
-            },
-            "ap-northeast-1" : {
-                "Hourly" : "ami-0cb359e71d439b78d",
-                "BYOL" : "ami-0fc52216e6273910a",
-                "Metered" : "ami-0bc89cf551777952c"
-            },
-            "sa-east-1" : {
-                "Hourly" : "ami-0f4cdaa74cb6d32a0",
-                "BYOL" : "ami-09fee7fe54c56d820",
-                "Metered" : "ami-07849f0a8fdf8631d"
-            },
-            "ca-central-1" : {
-                "Hourly" : "ami-077963ee36ccb0dfd",
-                "BYOL" : "ami-0d7fd2598acd4810a",
-                "Metered" : "ami-085d5bd5b04fd4eb5"
-            },
-            "ap-southeast-1" : {
-                "Hourly" : "ami-0fcb7c270c47407a1",
-                "BYOL" : "ami-0e0aeaa98ae5cc496",
-                "Metered" : "ami-0f7b5f675fd430ba5"
-            },
-            "ap-southeast-2" : {
-                "Hourly" : "ami-079ddf7cbca860096",
-                "BYOL" : "ami-0891a0bfc7876a31b",
-                "Metered" : "ami-09e51871e7c13a979"
-            },
-            "eu-central-1" : {
-                "Hourly" : "ami-0f08140949ba7794f",
-                "BYOL" : "ami-0dd109404d84a3e9f",
-                "Metered" : "ami-0e5418c08efcdcb4d"
-            },
-            "us-east-1" : {
-                "Hourly" : "ami-089e56c253e66699e",
-                "BYOL" : "ami-0b11bb6b69087fd4a",
-                "Metered" : "ami-05c16b05a7bd6bf73"
-            },
-            "us-east-2" : {
-                "Hourly" : "ami-0e2f3c563e8231185",
-                "BYOL" : "ami-079a1fd615d7b0f0b",
-                "Metered" : "ami-0a7730a260dc16c6b"
-            },
-            "us-west-1" : {
-                "Hourly" : "ami-0f08cc03cc240d32b",
-                "BYOL" : "ami-0cc8c8c3e25f83166",
-                "Metered" : "ami-0f825352485dd7318"
-            },
-            "us-west-2" : {
-                "Hourly" : "ami-0d8fb7306df2ac254",
-                "BYOL" : "ami-0c1cfc98591a1c438",
-                "Metered" : "ami-0d330fb73f9765f4f"
-            }
-        }
-    },
-    "Conditions": {
-        "EnableRESTCondition": {
-            "Fn::Equals": [
-                {
-                    "Ref": "EnableREST"
-                },
-                "Yes"
-            ]
-        }
-    },
-    "Resources": {
-        "vpcCGF": {
-            "Type": "AWS::EC2::VPC",
-            "Properties": {
-                "CidrBlock": {
-                    "Ref": "VpcAddress"
-                },
-                "InstanceTenancy": "default",
-                "EnableDnsSupport": true,
-                "EnableDnsHostnames": true,
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-VPC"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "subnetPublic1": {
-            "Type": "AWS::EC2::Subnet",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Ref": "Zone1"
-                },
-                "CidrBlock": {
-                    "Fn::Join": [
-                        ".",
-                        [
-                            {
-                                "Fn::Select": [
-                                    0,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF1MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "Fn::Select": [
-                                    1,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF1MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "Fn::Select": [
-                                    2,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF1MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            "0/24"
-                        ]
-                    ]
-                },
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-PublicSubnet1"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "subnetPublic2": {
-            "Type": "AWS::EC2::Subnet",
-            "Properties": {
-                "AvailabilityZone": {
-                    "Ref": "Zone2"
-                },
-                "CidrBlock": {
-                    "Fn::Join": [
-                        ".",
-                        [
-                            {
-                                "Fn::Select": [
-                                    0,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF2MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "Fn::Select": [
-                                    1,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF2MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            {
-                                "Fn::Select": [
-                                    2,
-                                    {
-                                        "Fn::Split": [
-                                            ".",
-                                            {
-                                                "Ref": "CGF2MIP"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            },
-                            "0/24"
-                        ]
-                    ]
-                },
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-PublicSubnet2"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "igw": {
-            "Type": "AWS::EC2::InternetGateway",
-            "Properties": {
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-IGW"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "igwToInternet": {
-            "Type": "AWS::EC2::VPCGatewayAttachment",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "InternetGatewayId": {
-                    "Ref": "igw"
-                }
-            }
-        },
-        "routeTablePublic": {
-            "Type": "AWS::EC2::RouteTable",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-RouteTablePublic"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "PublicRoute": {
-            "Type": "AWS::EC2::Route",
-            "DependsOn": "igwToInternet",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "routeTablePublic"
-                },
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "GatewayId": {
-                    "Ref": "igw"
-                }
-            }
-        },
-        "routeTableToSubnetPublic1": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "routeTablePublic"
-                },
-                "SubnetId": {
-                    "Ref": "subnetPublic1"
-                }
-            }
-        },
-        "routeTableToSubnetPublic2": {
-            "Type": "AWS::EC2::SubnetRouteTableAssociation",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "routeTablePublic"
-                },
-                "SubnetId": {
-                    "Ref": "subnetPublic2"
-                }
-            }
-        },
-        "routeTablePrivate": {
-            "Type": "AWS::EC2::RouteTable",
-            "Properties": {
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-RouteTablePrivate"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "PrivateRoute": {
-            "Type": "AWS::EC2::Route",
-            "Properties": {
-                "RouteTableId": {
-                    "Ref": "routeTablePrivate"
-                },
-                "DestinationCidrBlock": "0.0.0.0/0",
-                "InstanceId": {
-                    "Ref": "instanceCGF1"
-                }
-            }
-        },
-        "securityGroupCGF": {
-            "Type": "AWS::EC2::SecurityGroup",
-            "Properties": {
-                "GroupDescription": "Allow All Traffic.",
-                "VpcId": {
-                    "Ref": "vpcCGF"
-                },
-                "SecurityGroupIngress": [
-                    {
-                        "IpProtocol": "-1",
-                        "FromPort": -1,
-                        "ToPort": -1,
-                        "CidrIp": "0.0.0.0/0"
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-SecurityGroup"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ]
-            }
-        },
-        "floatingEIP": {
-            "Type": "AWS::EC2::EIP",
-            "Properties": {
-                "Domain": "vpc"
-            }
-        },
-        "floatingEIPAssoc": {
-            "Type": "AWS::EC2::EIPAssociation",
-            "Properties": {
-                "AllocationId": {
-                    "Fn::GetAtt": [
-                        "floatingEIP",
-                        "AllocationId"
-                    ]
-                },
-                "InstanceId": {
-                    "Ref": "instanceCGF1"
-                }
-            }
-        },
-        "instanceCGF1": {
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "DisableApiTermination": false,
-                "InstanceInitiatedShutdownBehavior": "stop",
-                "IamInstanceProfile": {
-                    "Ref": "IAMProfile"
-                },
-                "ImageId": {
-                    "Fn::FindInMap": [
-                        {
-                            "Fn::FindInMap": [
-                                "amiMapMap",
-                                {
-                                    "Ref": "ReleaseVersion"
-                                },
-                                "mapName"
-                            ]
-                        },
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        {
-                            "Ref": "LicenceMode"
-                        }
-                    ]
-                },
-                "InstanceType": {
-                    "Ref": "InstanceType"
-                },
-                "Monitoring": false,
-                "SourceDestCheck": false,
-                "NetworkInterfaces": [
-                    {
-                        "DeleteOnTermination": true,
-                        "Description": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    "NIC CGF1 ",
-                                    {
-                                        "Ref": "Prefix"
-                                    }
-                                ]
-                            ]
-                        },
-                        "DeviceIndex": "0",
-                        "SubnetId": {
-                            "Ref": "subnetPublic1"
-                        },
-                        "PrivateIpAddresses": [
-                            {
-                                "PrivateIpAddress": {
-                                    "Ref": "CGF1MIP"
-                                },
-                                "Primary": true
-                            }
-                        ],
-                        "GroupSet": [
-                            {
-                                "Ref": "securityGroupCGF"
-                            }
-                        ],
-                        "AssociatePublicIpAddress": true
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-CGF1"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "\n",
-                            [
-                                "#!/bin/bash",
-                                {
-                                    "Fn::If": [
-                                        "EnableRESTCondition",
-                                        "/opt/phion/bin/cloud-enable-rest",
-                                        ""
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "/opt/aws/bin/cfn-init -v ",
-                                            "         --stack ",
-                                            {
-                                                "Ref": "AWS::StackName"
-                                            },
-                                            "         --resource instanceCGF1 ",
-                                            "         --region ",
-                                            {
-                                                "Ref": "AWS::Region"
-                                            }
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "/opt/phion/bin/cloud-setmip",
-                                            {
-                                                "Ref": "CGF1MIP"
-                                            },
-                                            "24",
-                                            {
-                                                "Fn::Join": [
-                                                    ".",
-                                                    [
-                                                        {
-                                                            "Fn::Select": [
-                                                                0,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF1MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        {
-                                                            "Fn::Select": [
-                                                                1,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF1MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        {
-                                                            "Fn::Select": [
-                                                                2,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF1MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        "1"
-                                                    ]
-                                                ]
-                                            }
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "echo",
-                                            {
-                                                "Ref": "instanceCGF2"
-                                            },
-                                            "|/opt/phion/bin/create-dha -c -o",
-                                            {
-                                                "Ref": "CGF2MIP"
-                                            },
-                                            "-g",
-                                            {
-                                                "Fn::Join": [
-                                                    ".",
-                                                    [
-                                                        {
-                                                            "Fn::Select": [
-                                                                0,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF2MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        {
-                                                            "Fn::Select": [
-                                                                1,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF2MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        {
-                                                            "Fn::Select": [
-                                                                2,
-                                                                {
-                                                                    "Fn::Split": [
-                                                                        ".",
-                                                                        {
-                                                                            "Ref": "CGF2MIP"
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            ]
-                                                        },
-                                                        "1"
-                                                    ]
-                                                ]
-                                            }
-                                        ]
-                                    ]
-                                },
-                                "cat << EOF >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                ". /etc/phion/bin/cloud-logapi.sh",
-                                "init_log box_Cloud_control aws-eip-shift",
-                                "ilog \"hook script called with \\$1\"",
-                                "EOF",
-                                "echo \"[[ \\\"_\\$1\\\" == \\\"_HA-START\\\" ]] && {\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "echo \"/opt/aws/bin/aws ec2 associate-address",
-                                            "--instance-id $(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)",
-                                            "--allocation-id ",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "floatingEIP",
-                                                    "AllocationId"
-                                                ]
-                                            },
-                                            "--allow-reassociation\"",
-                                            ">> /opt/phion/hooks/ha/aws-shift-eip.sh"
-                                        ]
-                                    ]
-                                },
-                                "echo \"ilog \\\"EIP shifting to primary initiated: \\${aws_handle}\\\"\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "echo \"}\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "chmod +x /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "cat << EOF >> /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                "if [[ \\$(head -1 /opt/phion/run/server.ctrl | cut -d \" \" -f 3) =~ ^(primary|secondary)\\$ ]]; then",
-                                "MY_ID=\\`/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id\\`",
-                                "MY_IP=\\`/opt/aws/bin/aws ec2 describe-instances --instance-id \\$MY_ID --output text | grep ASSOC | head -1 | cut -d \\$'\\t' -f 4\\`",
-                                "CLUSTER_CNT=\\`phionctrl server show | grep Boxes | xargs | tr \" \" \"\\n\" | grep -v Boxes | wc -l\\`",
-                                "if [ \"_\\$1\" != \"_\\$MY_IP\" ] && [ \\$CLUSTER_CNT == \"2\" ]; then",
-                                "/opt/phion/hooks/ha/aws-shift-eip.sh HA-START",
-                                "fi",
-                                "fi",
-                                "EOF",
-                                "chmod +x /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "echo \"* * * * * root /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                            {
-                                                "Ref": "floatingEIP"
-                                            },
-                                            "\" > /etc/cron.d/aws-check-eip-assoc"
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "/opt/aws/bin/cfn-signal -e $? ",
-                                            "         --stack ",
-                                            {
-                                                "Ref": "AWS::StackName"
-                                            },
-                                            "         --resource instanceCGF1 ",
-                                            "         --region ",
-                                            {
-                                                "Ref": "AWS::Region"
-                                            }
-                                        ]
-                                    ]
-                                }
-                            ]
-                        ]
-                    }
-                }
-            },
-            "CreationPolicy": {
-                "ResourceSignal": {
-                    "Timeout": "PT15M"
-                }
-            }
-        },
-        "instanceCGF2": {
-            "Type": "AWS::EC2::Instance",
-            "Properties": {
-                "DisableApiTermination": false,
-                "InstanceInitiatedShutdownBehavior": "stop",
-                "IamInstanceProfile": {
-                    "Ref": "IAMProfile"
-                },
-                "ImageId": {
-                    "Fn::FindInMap": [
-                        {
-                            "Fn::FindInMap": [
-                                "amiMapMap",
-                                {
-                                    "Ref": "ReleaseVersion"
-                                },
-                                "mapName"
-                            ]
-                        },
-                        {
-                            "Ref": "AWS::Region"
-                        },
-                        {
-                            "Ref": "LicenceMode"
-                        }
-                    ]
-                },
-                "InstanceType": {
-                    "Ref": "InstanceType"
-                },
-                "Monitoring": false,
-                "SourceDestCheck": false,
-                "NetworkInterfaces": [
-                    {
-                        "DeleteOnTermination": true,
-                        "Description": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    "NIC CGF2 ",
-                                    {
-                                        "Ref": "Prefix"
-                                    }
-                                ]
-                            ]
-                        },
-                        "DeviceIndex": "0",
-                        "SubnetId": {
-                            "Ref": "subnetPublic2"
-                        },
-                        "PrivateIpAddresses": [
-                            {
-                                "PrivateIpAddress": {
-                                    "Ref": "CGF2MIP"
-                                },
-                                "Primary": true
-                            }
-                        ],
-                        "GroupSet": [
-                            {
-                                "Ref": "securityGroupCGF"
-                            }
-                        ],
-                        "AssociatePublicIpAddress": true
-                    }
-                ],
-                "Tags": [
-                    {
-                        "Key": "Name",
-                        "Value": {
-                            "Fn::Join": [
-                                "",
-                                [
-                                    {
-                                        "Ref": "Prefix"
-                                    },
-                                    "-CGF2"
-                                ]
-                            ]
-                        }
-                    },
-                    {
-                        "Key": "TemplateName",
-                        "Value": {
-                            "Ref": "Prefix"
-                        }
-                    }
-                ],
-                "UserData": {
-                    "Fn::Base64": {
-                        "Fn::Join": [
-                            "\n",
-                            [
-                                "#!/bin/bash",
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "/opt/aws/bin/cfn-init -v ",
-                                            "         --stack ",
-                                            {
-                                                "Ref": "AWS::StackName"
-                                            },
-                                            "         --resource instanceCGF2 ",
-                                            "         --region ",
-                                            {
-                                                "Ref": "AWS::Region"
-                                            }
-                                        ]
-                                    ]
-                                },
-                                "/opt/phion/bin/editconf -f /opt/phion/config/active/boxadm.conf -p RPASSWDENFORCE -v 0",
-                                "/opt/phion/bin/editconf -f /opt/phion/config/configroot/boxadm.conf -p RPASSWDENFORCE -v 0",
-                                "cat << EOF >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                ". /etc/phion/bin/cloud-logapi.sh",
-                                "init_log box_Cloud_control aws-eip-shift",
-                                "ilog \"hook script called with \\$1\"",
-                                "EOF",
-                                "echo \"[[ \\\"_\\$1\\\" == \\\"_HA-START\\\" ]] && {\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "echo \"/opt/aws/bin/aws ec2 associate-address",
-                                            "--instance-id $(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)",
-                                            "--allocation-id ",
-                                            {
-                                                "Fn::GetAtt": [
-                                                    "floatingEIP",
-                                                    "AllocationId"
-                                                ]
-                                            },
-                                            "--allow-reassociation\"",
-                                            ">> /opt/phion/hooks/ha/aws-shift-eip.sh"
-                                        ]
-                                    ]
-                                },
-                                "echo \"ilog \\\"EIP shifting to secondary initiated: \\${aws_handle}\\\"\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "echo \"}\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "chmod +x /opt/phion/hooks/ha/aws-shift-eip.sh",
-                                "cat << EOF >> /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                "if [[ \\$(head -1 /opt/phion/run/server.ctrl | cut -d \" \" -f 3) =~ ^(primary|secondary)\\$ ]]; then",
-                                "MY_ID=\\`/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id\\`",
-                                "MY_IP=\\`/opt/aws/bin/aws ec2 describe-instances --instance-id \\$MY_ID --output text | grep ASSOC | head -1 | cut -d \\$'\\t' -f 4\\`",
-                                "CLUSTER_CNT=\\`phionctrl server show | grep Boxes | xargs | tr \" \" \"\\n\" | grep -v Boxes | wc -l\\`",
-                                "if [ \"_\\$1\" != \"_\\$MY_IP\" ] && [ \\$CLUSTER_CNT == \"2\" ]; then",
-                                "/opt/phion/hooks/ha/aws-shift-eip.sh HA-START",
-                                "fi",
-                                "fi",
-                                "EOF",
-                                "chmod +x /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "echo \"* * * * * root /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
-                                            {
-                                                "Ref": "floatingEIP"
-                                            },
-                                            "\" > /etc/cron.d/aws-check-eip-assoc"
-                                        ]
-                                    ]
-                                },
-                                {
-                                    "Fn::Join": [
-                                        " ",
-                                        [
-                                            "/opt/aws/bin/cfn-signal -e $? ",
-                                            "         --stack ",
-                                            {
-                                                "Ref": "AWS::StackName"
-                                            },
-                                            "         --resource instanceCGF2 ",
-                                            "         --region ",
-                                            {
-                                                "Ref": "AWS::Region"
-                                            }
-                                        ]
-                                    ]
-                                }
-                            ]
-                        ]
-                    }
-                }
-            },
-            "CreationPolicy": {
-                "ResourceSignal": {
-                    "Timeout": "PT15M"
-                }
-            }
-        }
-    },
-    "Outputs": {
-        "CGFPublicIP": {
-            "Description": "Public IP address of the active firewall",
-            "Value": {
-                "Ref": "floatingEIP"
-            }
-        },
-        "InitialPassword": {
-            "Description": "Initial password for firewall management",
-            "Value": {
-                "Ref": "instanceCGF1"
-            }
-        }
+      }
     }
+  },
+  "Parameters": {
+    "Prefix": {
+      "Type": "String",
+      "Default": "CGFHA",
+      "Description": "Enter the prefix prepended to resources of this template"
+    },
+    "InstanceType": {
+      "Description": "Select the EC2 instance type, Recommended: c5, m5 or t3",
+      "Type": "String",
+      "Default": "c5.large",
+      "AllowedValues": [
+        "t2.small",
+        "t3.small",
+        "t3.medium",
+        "t3.large",
+        "m5.large",
+        "m5.xlarge",
+        "m5.2xlarge",
+        "c5.large",
+        "c5.xlarge",
+        "c5.2xlarge"
+      ]
+    },
+    "LicenceMode": {
+      "Description": "Select the license type.",
+      "Type": "String",
+      "Default": "Hourly",
+      "AllowedValues": [
+        "Hourly",
+        "BYOL",
+        "Metered"
+      ]
+    },
+    "ReleaseVersion": {
+      "Description": "Which release do you want to deploy?",
+      "Type": "String",
+      "Default": "8.0.1",
+      "AllowedValues": [
+        "8.0.1",
+        "8.0.0"
+      ]
+    },
+    "EnableREST": {
+      "Description": "Enable REST service on firewall by default",
+      "Type": "String",
+      "Default": "No",
+      "AllowedValues": [
+        "Yes",
+        "No"
+      ]
+    },
+    "IAMProfile": {
+      "Description": "Select the IAM Role for the Firewall. Check Barracuda Campus (https://campus.barracuda.com/doc/73719778/) for more details",
+      "Type": "String",
+      "Default": "NextGenFirewallRole"
+    },
+    "CGF1MIP": {
+      "Type": "String",
+      "Default": "192.168.1.10",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
+    },
+    "CGF2MIP": {
+      "Type": "String",
+      "Default": "192.168.2.10",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})"
+    },
+    "Zone1": {
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "Description": "Availability Zone for primary firewall"
+    },
+    "Zone2": {
+      "Type": "AWS::EC2::AvailabilityZone::Name",
+      "Description": "Availability Zone for secondary firewall"
+    },
+    "VpcAddress": {
+      "Description": "IP address space for new VPC",
+      "Type": "String",
+      "Default": "192.168.0.0/16",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "Use valid CIDR notation"
+    }
+  },
+  "Mappings": {
+    "amiMapMap": {
+      "8.0.0": {
+        "mapName": "amiMapv800"
+      },
+      "8.0.1": {
+        "mapName": "amiMapv801"
+      }
+    },
+    "amiMapv800": {
+      "eu-north-1" : {
+        "Hourly" : "ami-b634bac8",
+        "BYOL" : "ami-aca729d2",
+        "Metered" : "ami-5b32bc25"
+      },
+      "ap-south-1" : {
+        "Hourly" : "ami-05d8947000efde91c",
+        "BYOL" : "ami-0c549990baa53a1aa",
+        "Metered" : "ami-0ffccdda4badd479d"
+      },
+      "eu-west-3" : {
+        "Hourly" : "ami-08d4f09d195f65cff",
+        "BYOL" : "ami-0be502f7260dff134",
+        "Metered" : "ami-0d94bd0757df22ed5"
+      },
+      "eu-west-2" : {
+        "Hourly" : "ami-035b249f052aeb5fb",
+        "BYOL" : "ami-0de48be72df38213f",
+        "Metered" : "ami-079f0175e689e5097"
+      },
+      "eu-west-1" : {
+        "Hourly" : "ami-05adfe52ef7ec4044",
+        "BYOL" : "ami-0f5e293b518394d71",
+        "Metered" : "ami-0ada3e53562ebfc1c"
+      },
+      "ap-northeast-2" : {
+        "Hourly" : "ami-04ceb3fc6278de36d",
+        "BYOL" : "ami-0e27f9dd8e567acd3",
+        "Metered" : "ami-0c2d8a966c5e951f5"
+      },
+      "ap-northeast-1" : {
+        "Hourly" : "ami-0e988e6508948c3d3",
+        "BYOL" : "ami-043687e221594a9a1",
+        "Metered" : "ami-0584f33d006e5a056"
+      },
+      "sa-east-1" : {
+        "Hourly" : "ami-08968a20554149211",
+        "BYOL" : "ami-044ddf8df19021644",
+        "Metered" : "ami-0fcb14b5b118a13c7"
+      },
+      "ca-central-1" : {
+        "Hourly" : "ami-0e2e42f2cb5ece765",
+        "BYOL" : "ami-07afa625c7ee674d6",
+        "Metered" : "ami-0dd0c59294237d3e9"
+      },
+      "ap-southeast-1" : {
+        "Hourly" : "ami-0a3ecff76bcda23fc",
+        "BYOL" : "ami-0cb19a962b84d7c3b",
+        "Metered" : "ami-0ed78dcaddb4b49f3"
+      },
+      "ap-southeast-2" : {
+        "Hourly" : "ami-0f27e75ee3c9255fb",
+        "BYOL" : "ami-0d31110314e6d66ed",
+        "Metered" : "ami-06c5d534c177581c6"
+      },
+      "eu-central-1" : {
+        "Hourly" : "ami-049e4cc80b4d34754",
+        "BYOL" : "ami-0e5e37c8b6fa8a1ba",
+        "Metered" : "ami-0fbe71e180243be6a"
+      },
+      "us-east-1" : {
+        "Hourly" : "ami-091a6c8700573fd21",
+        "BYOL" : "ami-0c61a49ad4a308b8e",
+        "Metered" : "ami-0c4532c1dcbb3e897"
+      },
+      "us-east-2" : {
+        "Hourly" : "ami-0b97b7ca6d22e4379",
+        "BYOL" : "ami-0453af95aab2fe7e1",
+        "Metered" : "ami-05a9199138582ef3f"
+      },
+      "us-west-1" : {
+        "Hourly" : "ami-00d7c4c3401e0dccd",
+        "BYOL" : "ami-04d226c6d3e3f36d2",
+        "Metered" : "ami-0d176d42c7ed1e2d1"
+      },
+      "us-west-2" : {
+        "Hourly" : "ami-095db289b34f76bb8",
+        "BYOL" : "ami-0a213fa7b12a5b774",
+        "Metered" : "ami-0aaf43d17c67db548"
+      }
+    },
+    "amiMapv801": {
+      "eu-north-1" : {
+        "Hourly" : "ami-d5f07aab",
+        "BYOL" : "ami-3ddc5643",
+        "Metered" : "ami-c5de54bb"
+      },
+      "ap-south-1" : {
+        "Hourly" : "ami-0d80990e16203a3ef",
+        "BYOL" : "ami-063bdb93cfeaf488e",
+        "Metered" : "ami-09bfaa45d257c0483"
+      },
+      "eu-west-3" : {
+        "Hourly" : "ami-08587426b7e67d0f0",
+        "BYOL" : "ami-0d99cd1d6c8f1b69d",
+        "Metered" : "ami-0c83cb96ecc4941a7"
+      },
+      "eu-west-2" : {
+        "Hourly" : "ami-07b5a7fc0e47575b0",
+        "BYOL" : "ami-08c8443040da4c2da",
+        "Metered" : "ami-0d84fa76bca5a4070"
+      },
+      "eu-west-1" : {
+        "Hourly" : "ami-0b1daf478ac2778cc",
+        "BYOL" : "ami-0ef66d776e0c21d26",
+        "Metered" : "ami-0d83d89bf9e291142"
+      },
+      "ap-northeast-2" : {
+        "Hourly" : "ami-0f3c47e9693208c24",
+        "BYOL" : "ami-0ef98c31cbc5f57f0",
+        "Metered" : "ami-0818cfbd5cef2e5c8"
+      },
+      "ap-northeast-1" : {
+        "Hourly" : "ami-0cb359e71d439b78d",
+        "BYOL" : "ami-0fc52216e6273910a",
+        "Metered" : "ami-0bc89cf551777952c"
+      },
+      "sa-east-1" : {
+        "Hourly" : "ami-0f4cdaa74cb6d32a0",
+        "BYOL" : "ami-09fee7fe54c56d820",
+        "Metered" : "ami-07849f0a8fdf8631d"
+      },
+      "ca-central-1" : {
+        "Hourly" : "ami-077963ee36ccb0dfd",
+        "BYOL" : "ami-0d7fd2598acd4810a",
+        "Metered" : "ami-085d5bd5b04fd4eb5"
+      },
+      "ap-southeast-1" : {
+        "Hourly" : "ami-0fcb7c270c47407a1",
+        "BYOL" : "ami-0e0aeaa98ae5cc496",
+        "Metered" : "ami-0f7b5f675fd430ba5"
+      },
+      "ap-southeast-2" : {
+        "Hourly" : "ami-079ddf7cbca860096",
+        "BYOL" : "ami-0891a0bfc7876a31b",
+        "Metered" : "ami-09e51871e7c13a979"
+      },
+      "eu-central-1" : {
+        "Hourly" : "ami-0f08140949ba7794f",
+        "BYOL" : "ami-0dd109404d84a3e9f",
+        "Metered" : "ami-0e5418c08efcdcb4d"
+      },
+      "us-east-1" : {
+        "Hourly" : "ami-089e56c253e66699e",
+        "BYOL" : "ami-0b11bb6b69087fd4a",
+        "Metered" : "ami-05c16b05a7bd6bf73"
+      },
+      "us-east-2" : {
+        "Hourly" : "ami-0e2f3c563e8231185",
+        "BYOL" : "ami-079a1fd615d7b0f0b",
+        "Metered" : "ami-0a7730a260dc16c6b"
+      },
+      "us-west-1" : {
+        "Hourly" : "ami-0f08cc03cc240d32b",
+        "BYOL" : "ami-0cc8c8c3e25f83166",
+        "Metered" : "ami-0f825352485dd7318"
+      },
+      "us-west-2" : {
+        "Hourly" : "ami-0d8fb7306df2ac254",
+        "BYOL" : "ami-0c1cfc98591a1c438",
+        "Metered" : "ami-0d330fb73f9765f4f"
+      }
+    }
+  },
+  "Conditions": {
+    "EnableRESTCondition": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnableREST"
+        },
+        "Yes"
+      ]
+    }
+  },
+  "Resources": {
+    "vpcCGF": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VpcAddress"
+        },
+        "InstanceTenancy": "default",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-VPC"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "subnetPublic1": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "Zone1"
+        },
+        "CidrBlock": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Fn::Select": [
+                  0,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF1MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Select": [
+                  1,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF1MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF1MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "0/24"
+            ]
+          ]
+        },
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-PublicSubnet1"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "subnetPublic2": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "AvailabilityZone": {
+          "Ref": "Zone2"
+        },
+        "CidrBlock": {
+          "Fn::Join": [
+            ".",
+            [
+              {
+                "Fn::Select": [
+                  0,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF2MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Select": [
+                  1,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF2MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Select": [
+                  2,
+                  {
+                    "Fn::Split": [
+                      ".",
+                      {
+                        "Ref": "CGF2MIP"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "0/24"
+            ]
+          ]
+        },
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-PublicSubnet2"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "igw": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-IGW"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "igwToInternet": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "InternetGatewayId": {
+          "Ref": "igw"
+        }
+      }
+    },
+    "routeTablePublic": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-RouteTablePublic"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "PublicRoute": {
+      "Type": "AWS::EC2::Route",
+      "DependsOn": "igwToInternet",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "routeTablePublic"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "igw"
+        }
+      }
+    },
+    "routeTableToSubnetPublic1": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "routeTablePublic"
+        },
+        "SubnetId": {
+          "Ref": "subnetPublic1"
+        }
+      }
+    },
+    "routeTableToSubnetPublic2": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "routeTablePublic"
+        },
+        "SubnetId": {
+          "Ref": "subnetPublic2"
+        }
+      }
+    },
+    "routeTablePrivate": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-RouteTablePrivate"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "PrivateRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "routeTablePrivate"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "InstanceId": {
+          "Ref": "instanceCGF1"
+        }
+      }
+    },
+    "securityGroupCGF": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Allow All Traffic.",
+        "VpcId": {
+          "Ref": "vpcCGF"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "-1",
+            "FromPort": -1,
+            "ToPort": -1,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-SecurityGroup"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ]
+      }
+    },
+    "floatingEIP": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc"
+      }
+    },
+    "floatingEIPAssoc": {
+      "Type": "AWS::EC2::EIPAssociation",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "floatingEIP",
+            "AllocationId"
+          ]
+        },
+        "InstanceId": {
+          "Ref": "instanceCGF1"
+        }
+      }
+    },
+    "instanceCGF1": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": false,
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "IamInstanceProfile": {
+          "Ref": "IAMProfile"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            {
+              "Fn::FindInMap": [
+                "amiMapMap",
+                {
+                  "Ref": "ReleaseVersion"
+                },
+                "mapName"
+              ]
+            },
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Ref": "LicenceMode"
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "Monitoring": false,
+        "SourceDestCheck": false,
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": true,
+            "Description": {
+              "Fn::Join": [
+                "",
+                [
+                  "NIC CGF1 ",
+                  {
+                    "Ref": "Prefix"
+                  }
+                ]
+              ]
+            },
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "subnetPublic1"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": {
+                  "Ref": "CGF1MIP"
+                },
+                "Primary": true
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "securityGroupCGF"
+              }
+            ],
+            "AssociatePublicIpAddress": true
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-CGF1"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                {
+                  "Fn::If": [
+                    "EnableRESTCondition",
+                    "/opt/phion/bin/cloud-enable-rest",
+                    ""
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/opt/aws/bin/cfn-init -v ",
+                      "     --stack ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "     --resource instanceCGF1 ",
+                      "     --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      }
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/opt/phion/bin/cloud-setmip",
+                      {
+                        "Ref": "CGF1MIP"
+                      },
+                      "24",
+                      {
+                        "Fn::Join": [
+                          ".",
+                          [
+                            {
+                              "Fn::Select": [
+                                0,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF1MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "Fn::Select": [
+                                1,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF1MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "Fn::Select": [
+                                2,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF1MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            "1"
+                          ]
+                        ]
+                      }
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo",
+                      {
+                        "Ref": "instanceCGF2"
+                      },
+                      "|/opt/phion/bin/create-dha -c -o",
+                      {
+                        "Ref": "CGF2MIP"
+                      },
+                      "-g",
+                      {
+                        "Fn::Join": [
+                          ".",
+                          [
+                            {
+                              "Fn::Select": [
+                                0,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF2MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "Fn::Select": [
+                                1,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF2MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "Fn::Select": [
+                                2,
+                                {
+                                  "Fn::Split": [
+                                    ".",
+                                    {
+                                      "Ref": "CGF2MIP"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            "1"
+                          ]
+                        ]
+                      }
+                    ]
+                  ]
+                },
+                "cat << EOF >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                ". /etc/phion/bin/cloud-logapi.sh",
+                "init_log box_Cloud_control aws-eip-shift",
+                "ilog \"hook script called with \\$1\"",
+                "EOF",
+                "echo \"[[ \\\"_\\$1\\\" == \\\"_HA-START\\\" ]] && {\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo \"/opt/aws/bin/aws ec2 associate-address",
+                      "--instance-id $(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)",
+                      "--allocation-id ",
+                      {
+                        "Fn::GetAtt": [
+                          "floatingEIP",
+                          "AllocationId"
+                        ]
+                      },
+                      "--allow-reassociation\"",
+                      ">> /opt/phion/hooks/ha/aws-shift-eip.sh"
+                    ]
+                  ]
+                },
+                "echo \"ilog \\\"EIP shifting to primary initiated: \\${aws_handle}\\\"\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "echo \"}\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "chmod +x /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "cat << EOF >> /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                "if [[ \\$(head -1 /opt/phion/run/server.ctrl | cut -d \" \" -f 3) =~ ^(primary|secondary)\\$ ]]; then",
+                "MY_ID=\\`/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id\\`",
+                "MY_IP=\\`/opt/aws/bin/aws ec2 describe-instances --instance-id \\$MY_ID --output text | grep ASSOC | head -1 | cut -d \\$'\\t' -f 4\\`",
+                "CLUSTER_CNT=\\`phionctrl server show | grep Boxes | xargs | tr \" \" \"\\n\" | grep -v Boxes | wc -l\\`",
+                "if [ \"_\\$1\" != \"_\\$MY_IP\" ] && [ \\$CLUSTER_CNT == \"2\" ]; then",
+                "/opt/phion/hooks/ha/aws-shift-eip.sh HA-START",
+                "fi",
+                "fi",
+                "EOF",
+                "chmod +x /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo \"* * * * * root /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                      {
+                        "Ref": "floatingEIP"
+                      },
+                      "\" > /etc/cron.d/aws-check-eip-assoc"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/opt/aws/bin/cfn-signal -e $? ",
+                      "     --stack ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "     --resource instanceCGF1 ",
+                      "     --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT15M"
+        }
+      }
+    },
+    "instanceCGF2": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "DisableApiTermination": false,
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "IamInstanceProfile": {
+          "Ref": "IAMProfile"
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            {
+              "Fn::FindInMap": [
+                "amiMapMap",
+                {
+                  "Ref": "ReleaseVersion"
+                },
+                "mapName"
+              ]
+            },
+            {
+              "Ref": "AWS::Region"
+            },
+            {
+              "Ref": "LicenceMode"
+            }
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        },
+        "Monitoring": false,
+        "SourceDestCheck": false,
+        "NetworkInterfaces": [
+          {
+            "DeleteOnTermination": true,
+            "Description": {
+              "Fn::Join": [
+                "",
+                [
+                  "NIC CGF2 ",
+                  {
+                    "Ref": "Prefix"
+                  }
+                ]
+              ]
+            },
+            "DeviceIndex": "0",
+            "SubnetId": {
+              "Ref": "subnetPublic2"
+            },
+            "PrivateIpAddresses": [
+              {
+                "PrivateIpAddress": {
+                  "Ref": "CGF2MIP"
+                },
+                "Primary": true
+              }
+            ],
+            "GroupSet": [
+              {
+                "Ref": "securityGroupCGF"
+              }
+            ],
+            "AssociatePublicIpAddress": true
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Ref": "Prefix"
+                  },
+                  "-CGF2"
+                ]
+              ]
+            }
+          },
+          {
+            "Key": "TemplateName",
+            "Value": {
+              "Ref": "Prefix"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/opt/aws/bin/cfn-init -v ",
+                      "     --stack ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "     --resource instanceCGF2 ",
+                      "     --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      }
+                    ]
+                  ]
+                },
+                "/opt/phion/bin/editconf -f /opt/phion/config/active/boxadm.conf -p RPASSWDENFORCE -v 0",
+                "/opt/phion/bin/editconf -f /opt/phion/config/configroot/boxadm.conf -p RPASSWDENFORCE -v 0",
+                "cat << EOF >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                ". /etc/phion/bin/cloud-logapi.sh",
+                "init_log box_Cloud_control aws-eip-shift",
+                "ilog \"hook script called with \\$1\"",
+                "EOF",
+                "echo \"[[ \\\"_\\$1\\\" == \\\"_HA-START\\\" ]] && {\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo \"/opt/aws/bin/aws ec2 associate-address",
+                      "--instance-id $(/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id)",
+                      "--allocation-id ",
+                      {
+                        "Fn::GetAtt": [
+                          "floatingEIP",
+                          "AllocationId"
+                        ]
+                      },
+                      "--allow-reassociation\"",
+                      ">> /opt/phion/hooks/ha/aws-shift-eip.sh"
+                    ]
+                  ]
+                },
+                "echo \"ilog \\\"EIP shifting to secondary initiated: \\${aws_handle}\\\"\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "echo \"}\" >> /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "chmod +x /opt/phion/hooks/ha/aws-shift-eip.sh",
+                "cat << EOF >> /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                "if [[ \\$(head -1 /opt/phion/run/server.ctrl | cut -d \" \" -f 3) =~ ^(primary|secondary)\\$ ]]; then",
+                "MY_ID=\\`/usr/bin/curl -s http://169.254.169.254/latest/meta-data/instance-id\\`",
+                "MY_IP=\\`/opt/aws/bin/aws ec2 describe-instances --instance-id \\$MY_ID --output text | grep ASSOC | head -1 | cut -d \\$'\\t' -f 4\\`",
+                "CLUSTER_CNT=\\`phionctrl server show | grep Boxes | xargs | tr \" \" \"\\n\" | grep -v Boxes | wc -l\\`",
+                "if [ \"_\\$1\" != \"_\\$MY_IP\" ] && [ \\$CLUSTER_CNT == \"2\" ]; then",
+                "/opt/phion/hooks/ha/aws-shift-eip.sh HA-START",
+                "fi",
+                "fi",
+                "EOF",
+                "chmod +x /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "echo \"* * * * * root /opt/phion/bin/xcloud-aws-check-eip-assoc.sh",
+                      {
+                        "Ref": "floatingEIP"
+                      },
+                      "\" > /etc/cron.d/aws-check-eip-assoc"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    " ",
+                    [
+                      "/opt/aws/bin/cfn-signal -e $? ",
+                      "     --stack ",
+                      {
+                        "Ref": "AWS::StackName"
+                      },
+                      "     --resource instanceCGF2 ",
+                      "     --region ",
+                      {
+                        "Ref": "AWS::Region"
+                      }
+                    ]
+                  ]
+                }
+              ]
+            ]
+          }
+        }
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Timeout": "PT15M"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "CGFPublicIP": {
+      "Description": "Public IP address of the active firewall",
+      "Value": {
+        "Ref": "floatingEIP"
+      }
+    },
+    "InitialPassword": {
+      "Description": "Initial password for firewall management",
+      "Value": {
+        "Ref": "instanceCGF1"
+      }
+    }
+  }
 }
